@@ -8,7 +8,7 @@ import {
   type GuildMember,
   type Message
 } from 'discord.js';
-import { getHoneypotChannel, logHoneypotTrigger } from '@bot/database';
+import { getHoneypotChannel, logHoneypotTrigger, getHoneypotLogChannel } from '@bot/database';
 
 export class HoneypotHandler {
   async handleMessage(message: Message): Promise<void> {
@@ -35,6 +35,13 @@ export class HoneypotHandler {
 
     if (!canModerate) {
       console.log(`Cannot kick ${member.user.tag} - higher or equal role hierarchy`);
+      await this.sendLog(message.guild, {
+        user: message.author,
+        action: 'kick_failed',
+        reason: 'Higher or equal role hierarchy',
+        channel: message.channel as TextChannel,
+        messageContent: message.content
+      });
       return;
     }
 
@@ -48,8 +55,62 @@ export class HoneypotHandler {
         message_content: message.content.slice(0, 1000),
         action_taken: 'kick'
       });
+      
+      await this.sendLog(message.guild, {
+        user: message.author,
+        action: 'kick',
+        reason: 'Unauthorized message in honeypot channel',
+        channel: message.channel as TextChannel,
+        messageContent: message.content
+      });
     } catch (error) {
       console.error('Failed to kick user from honeypot:', error);
+      await this.sendLog(message.guild, {
+        user: message.author,
+        action: 'kick_failed',
+        reason: 'Bot permission error',
+        channel: message.channel as TextChannel,
+        messageContent: message.content
+      });
+    }
+  }
+
+  async sendLog(guild: Guild, logData: {
+    user: { id: string; tag: string; displayAvatarURL?: () => string };
+    action: 'kick' | 'kick_failed';
+    reason: string;
+    channel: TextChannel;
+    messageContent: string;
+  }): Promise<void> {
+    const logChannelId = await getHoneypotLogChannel(guild.id);
+    if (!logChannelId) return;
+
+    const logChannel = guild.channels.cache.get(logChannelId) as TextChannel;
+    if (!logChannel) return;
+
+    const isSuccess = logData.action === 'kick';
+    const color = isSuccess ? Colors.Red : Colors.Orange;
+    const title = isSuccess ? '🍯 Honeypot Triggered - User Kicked' : '⚠️ Honeypot Kick Failed';
+
+    const embed = new EmbedBuilder()
+      .setColor(color)
+      .setTitle(title)
+      .setThumbnail(logData.user.displayAvatarURL?.() || null)
+      .addFields(
+        { name: '👤 User', value: `${logData.user.tag} (\`${logData.user.id}\`)`, inline: true },
+        { name: '📍 Channel', value: `<#${logData.channel.id}>`, inline: true },
+        { name: '⏰ Time', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true },
+        { name: '📝 Message Content', value: `\`\`\`${logData.messageContent.slice(0, 1000) || 'No content'}\`\`\``, inline: false },
+        { name: '🔧 Action', value: isSuccess ? 'Kicked from server' : 'Failed to kick', inline: true },
+        { name: '📋 Reason', value: logData.reason, inline: true }
+      )
+      .setFooter({ text: 'AegisShield Honeypot System' })
+      .setTimestamp();
+
+    try {
+      await logChannel.send({ embeds: [embed] });
+    } catch (error) {
+      console.error('Failed to send honeypot log:', error);
     }
   }
 
@@ -65,17 +126,16 @@ export class HoneypotHandler {
 
   async sendHoneypotWarning(channel: TextChannel): Promise<void> {
     const embed = new EmbedBuilder()
-      .setColor(Colors.Red)
+      .setColor(Colors.DarkRed)
       .setTitle('🍯 HONEYPOT TRAP')
       .setDescription(
-        '**⚠️ WARNING: UNAUTHORIZED ACCESS DETECTED**\n\n' +
-        'This is a **security trap channel**. ' +
-        'If you are seeing this, you should not be here.\n\n' +
-        '**🚨 ANY MESSAGE SENT HERE WILL RESULT IN:**\n' +
-        '• Immediate message deletion\n' +
-        '• Automatic kick from the server\n' +
-        '• Permanent record in security logs\n\n' +
-        '*This channel is designed to catch raiders and unauthorized bots.*'
+        '**🔒 RESTRICTED AREA - AUTHORIZED PERSONNEL ONLY**\n\n' +
+        'This channel is a **security honeypot** designed to detect unauthorized access.\n\n' +
+        '**🚨 TRIGGERING THIS TRAP WILL RESULT IN:**\n' +
+        '> • Instant message deletion\n' +
+        '> • Immediate removal from the server\n' +
+        '> • Permanent security log entry\n\n' +
+        '*If you can read this, you should not be here. Turn back now.*'
       )
       .setFooter({ 
         text: 'AegisShield Security System • Automated Protection' 

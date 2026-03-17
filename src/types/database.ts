@@ -6,6 +6,7 @@ export interface ServerRecord {
   member_count: number;
   joined_at: string;
   honeypot_channel_id?: string;
+  honeypot_log_channel_id?: string;
   log_channel_id?: string;
   created_at?: string;
   updated_at?: string;

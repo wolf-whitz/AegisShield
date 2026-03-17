@@ -6,3 +6,5 @@ export * from './ai-moderation-handler'
 
 export * from './ticket-handler'
 export * from './verification-handler'
+
+export * from './autorole'

@@ -1,7 +1,7 @@
-import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags, ChatInputCommandInteraction, type TextChannel } from 'discord.js';
 import { describeCommand } from '@bot/describer/command-describer';
 import type { Command } from '@types';
-import { setHoneypotChannel } from '@bot/database';
+import { setHoneypotChannel, setHoneypotLogChannel } from '@bot/database';
 import { HoneypotHandler } from '@handlers/honeypot-handler';
 
 const description = describeCommand(
@@ -20,8 +20,15 @@ export const honeypotCreateCommand: Command = {
         .setName('name')
         .setDescription('Name for the honeypot channel')
         .setRequired(false)
+    )
+    .addChannelOption(option =>
+      option
+        .setName('log_channel')
+        .setDescription('Channel to log honeypot kicks')
+        .setRequired(false)
+        .addChannelTypes(ChannelType.GuildText)
     ),
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.guild) {
       await interaction.reply({
         content: 'This command can only be used in a server',
@@ -31,18 +38,24 @@ export const honeypotCreateCommand: Command = {
     }
 
     const name = interaction.options.getString('name') || 'honeypot';
+    const logChannel = interaction.options.getChannel('log_channel') as TextChannel | null;
     const honeypotHandler = new HoneypotHandler();
     
     const channel = await honeypotHandler.createHoneypotChannel(interaction.guild, name);
     await setHoneypotChannel(interaction.guildId!, channel.id);
+    
+    if (logChannel) {
+      await setHoneypotLogChannel(interaction.guildId!, logChannel.id);
+    }
 
     await interaction.reply({
       content: `✅ Honeypot channel created: ${channel}\n\n` +
                `⚠️ **Warning**: Anyone who types in this channel will be **instantly kicked** and their messages deleted.\n` +
+               (logChannel ? `📝 Kicks will be logged to ${logChannel.name}\n` : '') +
                `Channel ID: \`${channel.id}\`\n\n` +
                `**Next steps**:\n` +
                `1. Move this channel to a hidden category\n` +
-               `2. Ensure @everyone can see it (this is the trap)\n` +
+               `2. Ensure a role that you can call unverified or any roles you dont trust can see it (this is the trap)\n` +
                `3. Deny access for your real member roles`,
       flags: MessageFlags.Ephemeral
     });

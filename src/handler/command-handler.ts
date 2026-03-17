@@ -17,7 +17,7 @@ import {
   allowLinkListCommand,
 } from '@commands';
 import { roleCreateCommand, roleCreatePresetCommand } from '@commands';
-import { ticketSetupCommand, purgeCommand, announceCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
+import { ticketSetupCommand, purgeCommand, inviteBotCommand, autoroleCommand, helpCommand, quarantineCommand, inviteServerCommand, statusMinecraftCommand, announceCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
 
 export class CommandHandler {
   public commands = new Collection<string, Command>();
@@ -55,8 +55,14 @@ export class CommandHandler {
     this.commands.set(aiModerationCommand.description.name, aiModerationCommand);
     this.commands.set(purgeCommand.description.name, purgeCommand);
     this.commands.set(announceCommand.description.name, announceCommand);
+    this.commands.set(statusMinecraftCommand.description.name, statusMinecraftCommand);
+    this.commands.set(inviteBotCommand.description.name, inviteBotCommand);
+    this.commands.set(inviteServerCommand.description.name, inviteServerCommand);
+    this.commands.set(quarantineCommand.description.name, quarantineCommand);
+    this.commands.set(autoroleCommand.description.name, autoroleCommand);
+    this.commands.set(helpCommand.description.name, helpCommand);
   }
-
+  
   async registerCommands(clientId: string): Promise<void> {
     const commandsData = this.commands.map(cmd => cmd.data.toJSON());
 

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { ServerRecord, ServerSettings, AIModerationLog } from '@types';
+import type { ServerRecord, ServerSettings, AIModerationLog, HoneypotLog } from '@types';
 
 export async function storeServer(serverData: Omit<ServerRecord, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
   const { error } = await supabase
@@ -12,6 +12,7 @@ export async function storeServer(serverData: Omit<ServerRecord, 'id' | 'created
         member_count: serverData.member_count,
         joined_at: serverData.joined_at,
         honeypot_channel_id: serverData.honeypot_channel_id,
+        honeypot_log_channel_id: serverData.honeypot_log_channel_id,
         log_channel_id: serverData.log_channel_id
       },
       { onConflict: 'server_id' }
@@ -49,6 +50,37 @@ export async function setHoneypotChannel(serverId: string, channelId: string): P
 export async function getHoneypotChannel(serverId: string): Promise<string | null> {
   const server = await getServer(serverId);
   return server?.honeypot_channel_id || null;
+}
+
+export async function setHoneypotLogChannel(serverId: string, channelId: string): Promise<void> {
+  const { error } = await supabase
+    .from('servers')
+    .update({ honeypot_log_channel_id: channelId })
+    .eq('server_id', serverId);
+
+  if (error) {
+    console.error('Failed to set honeypot log channel:', error);
+    throw error;
+  }
+}
+
+export async function getHoneypotLogChannel(serverId: string): Promise<string | null> {
+  const server = await getServer(serverId);
+  return server?.honeypot_log_channel_id || null;
+}
+
+export async function logHoneypotTrigger(log: HoneypotLog): Promise<void> {
+  const { error } = await supabase
+    .from('honeypot_logs')
+    .insert({
+      ...log,
+      created_at: new Date().toISOString()
+    });
+
+  if (error) {
+    console.error('Failed to log honeypot trigger:', error);
+    throw error;
+  }
 }
 
 export async function setLogChannel(serverId: string, channelId: string): Promise<void> {
