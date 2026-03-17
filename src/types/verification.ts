@@ -4,6 +4,8 @@ export interface VerificationConfig {
   mode: 1 | 2;
   role_id: string;
   secondary_role_id?: string | null;
+  remove_role_id?: string | null;
+  message_id?: string | null;
 }
 
 export interface VerificationSession {
