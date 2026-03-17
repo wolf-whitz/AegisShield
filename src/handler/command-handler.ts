@@ -17,7 +17,7 @@ import {
   allowLinkListCommand,
 } from '@commands';
 import { roleCreateCommand, roleCreatePresetCommand } from '@commands';
-import { ticketSetupCommand, purgeCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
+import { ticketSetupCommand, purgeCommand, announceCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
 
 export class CommandHandler {
   public commands = new Collection<string, Command>();
@@ -54,6 +54,7 @@ export class CommandHandler {
     this.commands.set(modifyPingMessageCommand.description.name, modifyPingMessageCommand);
     this.commands.set(aiModerationCommand.description.name, aiModerationCommand);
     this.commands.set(purgeCommand.description.name, purgeCommand);
+    this.commands.set(announceCommand.description.name, announceCommand);
   }
 
   async registerCommands(clientId: string): Promise<void> {

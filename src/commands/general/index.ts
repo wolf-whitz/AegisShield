@@ -8,3 +8,4 @@ export * from './modify-ping-message'
 export * from './log-channel'
 
 export * from './delete-message'
+export * from './announce'
