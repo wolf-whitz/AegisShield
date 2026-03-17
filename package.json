@@ -1,0 +1,26 @@
+{
+  "name": "AegisShield",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "prod": "bun src/index.ts",
+    "build": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.2",
+    "@types/node": "^22.13.10",
+    "discord.js": "^14.25.1",
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.10.0",
+    "openai": "^6.31.0"
+  }
+}
