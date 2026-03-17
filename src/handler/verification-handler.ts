@@ -14,11 +14,7 @@ import {
   type Client,
   type GuildMember
 } from 'discord.js';
-import { 
-  getVerificationConfig, 
-  isVerified, 
-  verifyUser 
-} from '@bot/database/verification-database';
+import { getVerificationConfig } from '@bot/database/verification-database';
 
 const activeMath = new Map<string, { num1: number; num2: number; answer: number }>();
 
@@ -26,6 +22,10 @@ function generateMathProblem(): { num1: number; num2: number; answer: number } {
   const num1 = Math.floor(Math.random() * 20) + 1;
   const num2 = Math.floor(Math.random() * 20) + 1;
   return { num1, num2, answer: num1 + num2 };
+}
+
+function isUserVerified(member: GuildMember, config: any): boolean {
+  return member.roles.cache.has(config.role_id);
 }
 
 export class VerificationHandler {
@@ -65,24 +65,6 @@ export class VerificationHandler {
         }
       }
     });
-
-    client.on(Events.GuildMemberAdd, async (member) => {
-      try {
-        const config = await getVerificationConfig(member.guild.id);
-        if (!config || !config.role_id) return;
-
-        const alreadyVerified = await isVerified(member.id, member.guild.id);
-        
-        if (alreadyVerified) {
-          await member.roles.add(config.role_id).catch(() => null);
-          if (config.secondary_role_id) {
-            await member.roles.add(config.secondary_role_id).catch(() => null);
-          }
-        }
-      } catch (error) {
-        console.error(`[Verification] Error in GuildMemberAdd:`, error);
-      }
-    });
   }
 
   private async handleSimpleVerification(interaction: ButtonInteraction, config: any): Promise<void> {
@@ -96,9 +78,7 @@ export class VerificationHandler {
       return;
     }
 
-    const alreadyVerified = await isVerified(member.id, interaction.guildId!);
-    
-    if (alreadyVerified) {
+    if (isUserVerified(member, config)) {
       await interaction.reply({
         content: '✅ You are already verified!',
         flags: MessageFlags.Ephemeral
@@ -116,8 +96,6 @@ export class VerificationHandler {
       if (config.remove_role_id && member.roles.cache.has(config.remove_role_id)) {
         await member.roles.remove(config.remove_role_id);
       }
-      
-      await verifyUser(member.id, interaction.guildId!);
       
       const embed = new EmbedBuilder()
         .setColor(Colors.Green)
@@ -210,8 +188,6 @@ export class VerificationHandler {
       if (config.remove_role_id && member.roles.cache.has(config.remove_role_id)) {
         await member.roles.remove(config.remove_role_id);
       }
-      
-      await verifyUser(member.id, interaction.guildId!);
       
       const embed = new EmbedBuilder()
         .setColor(Colors.Green)
