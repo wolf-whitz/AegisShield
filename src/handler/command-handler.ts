@@ -18,6 +18,7 @@ import {
 } from '@commands';
 import { roleCreateCommand, roleCreatePresetCommand } from '@commands';
 import { ticketSetupCommand, purgeCommand, inviteBotCommand, roleReactCommand, autoroleCommand, helpCommand, quarantineCommand, inviteServerCommand, statusMinecraftCommand, announceCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
+import { welcomeChannelCommand, welcomeMessageCommand, leftChannelCommand, leftMessageCommand } from '@commands';
 
 export class CommandHandler {
   public commands = new Collection<string, Command>();
@@ -62,6 +63,10 @@ export class CommandHandler {
     this.commands.set(autoroleCommand.description.name, autoroleCommand);
     this.commands.set(helpCommand.description.name, helpCommand);
     this.commands.set(roleReactCommand.description.name, roleReactCommand);
+    this.commands.set(welcomeChannelCommand.description.name, welcomeChannelCommand);
+    this.commands.set(welcomeMessageCommand.description.name, welcomeMessageCommand);
+    this.commands.set(leftChannelCommand.description.name, leftChannelCommand);
+    this.commands.set(leftMessageCommand.description.name, leftMessageCommand);
   }
   
   async registerCommands(clientId: string): Promise<void> {

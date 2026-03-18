@@ -9,3 +9,5 @@ export * from './links';
 
 export * from './autorole'
 export * from './reaction'
+
+export * from './welcome'

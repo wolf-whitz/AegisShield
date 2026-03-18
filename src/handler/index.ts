@@ -9,3 +9,5 @@ export * from './verification-handler'
 
 export * from './autorole'
 export * from './reaction-role'
+
+export * from './welcome-handler'
