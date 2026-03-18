@@ -3,3 +3,5 @@ export * from './Quarantine'
 
 export * from './server-stats'
 export * from './status'
+
+export * from './member'

@@ -11,3 +11,6 @@ export * from './autorole'
 export * from './reaction'
 
 export * from './welcome'
+export * from './voicechannel'
+
+export * from './giveaway'

@@ -9,7 +9,7 @@ import {
   AttachmentBuilder 
 } from 'discord.js';
 import type { Guild, GuildMember } from 'discord.js';
-import { VerificationHandler, ProtectionHandler, AIModerationHandler, ReactionRoleHandler, WelcomeLeaveHandler, TicketHandler, CommandHandler, HoneypotHandler, AutoRoleHandler } from '@bot/handler';
+import { VerificationHandler, ProtectionHandler, VoiceLogHandler, GiveawayButtonHandler, AIModerationHandler, ReactionRoleHandler, WelcomeLeaveHandler, TicketHandler, CommandHandler, HoneypotHandler, AutoRoleHandler } from '@bot/handler';
 import { storeServer, getHoneypotChannel, getPingMessage } from '@bot/database';
 
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -27,7 +27,8 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildPresences 
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildVoiceStates 
   ],
     partials: [
     Partials.Message,
@@ -47,6 +48,8 @@ new AIModerationHandler(client);
 new AutoRoleHandler(client);
 new ReactionRoleHandler(client)
 new WelcomeLeaveHandler(client)
+new VoiceLogHandler(client)
+new GiveawayButtonHandler(client)
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Logged in as ${readyClient.user.tag}`);

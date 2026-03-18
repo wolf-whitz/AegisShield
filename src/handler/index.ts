@@ -11,3 +11,6 @@ export * from './autorole'
 export * from './reaction-role'
 
 export * from './welcome-handler'
+export * from './voicelog'
+
+export * from './giveawayhandler'

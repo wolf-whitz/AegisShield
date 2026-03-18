@@ -18,7 +18,7 @@ import {
 } from '@commands';
 import { roleCreateCommand, roleCreatePresetCommand } from '@commands';
 import { ticketSetupCommand, purgeCommand, inviteBotCommand, roleReactCommand, autoroleCommand, helpCommand, quarantineCommand, inviteServerCommand, statusMinecraftCommand, announceCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
-import { welcomeChannelCommand, welcomeMessageCommand, leftChannelCommand, leftMessageCommand } from '@commands';
+import { welcomeChannelCommand, dadJokeCommand, channelCommand, mctiersCommand, giveawayCommand, sudokuCommand, quoteCommand, voiceChannelLogCommand, welcomeMessageCommand, leftChannelCommand, leftMessageCommand } from '@commands';
 
 export class CommandHandler {
   public commands = new Collection<string, Command>();
@@ -67,6 +67,13 @@ export class CommandHandler {
     this.commands.set(welcomeMessageCommand.description.name, welcomeMessageCommand);
     this.commands.set(leftChannelCommand.description.name, leftChannelCommand);
     this.commands.set(leftMessageCommand.description.name, leftMessageCommand);
+    this.commands.set(voiceChannelLogCommand.description.name, voiceChannelLogCommand);
+    this.commands.set(dadJokeCommand.description.name, dadJokeCommand);
+    this.commands.set(sudokuCommand.description.name, sudokuCommand);
+    this.commands.set(quoteCommand.description.name, quoteCommand);
+    this.commands.set(giveawayCommand.description.name, giveawayCommand);
+    this.commands.set(mctiersCommand.description.name, mctiersCommand);
+    this.commands.set(channelCommand.description.name, channelCommand);
   }
   
   async registerCommands(clientId: string): Promise<void> {

@@ -11,3 +11,4 @@ export * from './Spam'
 export * from './moderation'
 
 export * from './invite'
+export * from './minecraft'
