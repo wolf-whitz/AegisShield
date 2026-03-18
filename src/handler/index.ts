@@ -8,3 +8,4 @@ export * from './ticket-handler'
 export * from './verification-handler'
 
 export * from './autorole'
+export * from './reaction-role'

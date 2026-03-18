@@ -17,7 +17,7 @@ import {
   allowLinkListCommand,
 } from '@commands';
 import { roleCreateCommand, roleCreatePresetCommand } from '@commands';
-import { ticketSetupCommand, purgeCommand, inviteBotCommand, autoroleCommand, helpCommand, quarantineCommand, inviteServerCommand, statusMinecraftCommand, announceCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
+import { ticketSetupCommand, purgeCommand, inviteBotCommand, roleReactCommand, autoroleCommand, helpCommand, quarantineCommand, inviteServerCommand, statusMinecraftCommand, announceCommand, verificationChannelCommand, serverStatsCommand, generateCatCommand, generateDogCommand, userCommand, modifyPingMessageCommand, aiModerationCommand } from '@commands';
 
 export class CommandHandler {
   public commands = new Collection<string, Command>();
@@ -61,6 +61,7 @@ export class CommandHandler {
     this.commands.set(quarantineCommand.description.name, quarantineCommand);
     this.commands.set(autoroleCommand.description.name, autoroleCommand);
     this.commands.set(helpCommand.description.name, helpCommand);
+    this.commands.set(roleReactCommand.description.name, roleReactCommand);
   }
   
   async registerCommands(clientId: string): Promise<void> {

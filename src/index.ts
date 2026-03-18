@@ -5,10 +5,11 @@ import {
   MessageFlags, 
   PermissionFlagsBits, 
   EmbedBuilder, 
+  Partials,
   AttachmentBuilder 
 } from 'discord.js';
 import type { Guild, GuildMember } from 'discord.js';
-import { VerificationHandler, ProtectionHandler, AIModerationHandler, TicketHandler, CommandHandler, HoneypotHandler, AutoRoleHandler } from '@bot/handler';
+import { VerificationHandler, ProtectionHandler, AIModerationHandler, ReactionRoleHandler, TicketHandler, CommandHandler, HoneypotHandler, AutoRoleHandler } from '@bot/handler';
 import { storeServer, getHoneypotChannel, getPingMessage } from '@bot/database';
 
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -24,18 +25,27 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildPresences 
   ],
+    partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction,
+    Partials.User
+  ]
 });
 
 const commandHandler = new CommandHandler(TOKEN);
 const honeypotHandler = new HoneypotHandler();
+
 new TicketHandler(client);
 new VerificationHandler(client);
 new ProtectionHandler(client);
 new AIModerationHandler(client);
 new AutoRoleHandler(client);
+new ReactionRoleHandler(client)
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Logged in as ${readyClient.user.tag}`);

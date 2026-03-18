@@ -22,6 +22,7 @@
     "dotenv": "^16.4.7",
     "ioredis": "^5.10.0",
     "minecraftstatuspinger": "^1.2.2",
-    "openai": "^6.31.0"
+    "openai": "^6.31.0",
+    "posthog-node": "^5.28.2"
   }
 }

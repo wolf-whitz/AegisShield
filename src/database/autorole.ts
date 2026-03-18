@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { logError } from '@utils';
 
 export async function setAutoRole(serverId: string, roleId: string): Promise<void> {
   const { error } = await supabase
@@ -7,7 +8,7 @@ export async function setAutoRole(serverId: string, roleId: string): Promise<voi
     .eq('server_id', serverId);
 
   if (error) {
-    console.error('Failed to set auto-role:', error);
+    logError('setAutoRole_failed', { serverId, roleId, error });
     throw error;
   }
 }
@@ -17,10 +18,10 @@ export async function getAutoRole(serverId: string): Promise<string | null> {
     .from('servers')
     .select('autorole_id')
     .eq('server_id', serverId)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    console.error('Failed to get auto-role:', error);
+    logError('getAutoRole_failed', { serverId, error });
     return null;
   }
 
@@ -34,7 +35,7 @@ export async function removeAutoRole(serverId: string): Promise<void> {
     .eq('server_id', serverId);
 
   if (error) {
-    console.error('Failed to remove auto-role:', error);
+    logError('removeAutoRole_failed', { serverId, error });
     throw error;
   }
 }

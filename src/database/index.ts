@@ -8,3 +8,4 @@ export * from './settings';
 export * from './links';
 
 export * from './autorole'
+export * from './reaction'
