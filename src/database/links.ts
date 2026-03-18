@@ -1,5 +1,43 @@
 import { supabase } from './supabase';
 import { getOrCreateServerSettings } from './servers';
+import { logError } from '@utils';
+
+let scamDomains: Set<string> | null = null;
+let lastLoadTime: number = 0;
+const CACHE_DURATION = 3600000;
+
+async function loadScamDomains(): Promise<Set<string>> {
+  const now = Date.now();
+  
+  if (scamDomains && now - lastLoadTime < CACHE_DURATION) {
+    return scamDomains;
+  }
+  
+  try {
+    const response = await fetch('https://raw.githubusercontent.com/Discord-AntiScam/scam-links/main/list.json');
+    const domains = await response.json() as string[];
+    scamDomains = new Set(domains);
+    lastLoadTime = now;
+    return scamDomains;
+  } catch (error) {
+    logError('loadScamDomains_failed', { error });
+    return scamDomains || new Set();
+  }
+}
+
+export async function isScamLink(url: string): Promise<boolean> {
+  const domains = await loadScamDomains();
+  
+  const domain = url.toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .split('/')[0]
+    ?.split(':')[0] || '';
+  
+  if (!domain) return false;
+  
+  return domains.has(domain) || domains.has(`www.${domain}`);
+}
 
 export async function addAllowedLink(serverId: string, domain: string): Promise<void> {
   const settings = await getOrCreateServerSettings(serverId);
@@ -23,7 +61,7 @@ export async function addAllowedLink(serverId: string, domain: string): Promise<
     );
 
   if (error) {
-    console.error('Failed to add allowed link:', error);
+    logError('addAllowedLink_failed', { serverId, domain, error });
     throw error;
   }
 }
@@ -32,7 +70,7 @@ export async function removeAllowedLink(serverId: string, domain: string): Promi
   const settings = await getOrCreateServerSettings(serverId);
   const currentLinks = settings.allowed_links || [];
   
-  const newLinks = currentLinks.filter(link => link !== domain);
+  const newLinks = currentLinks.filter((link: string) => link !== domain);
   
   const { error } = await supabase
     .from('server_settings')
@@ -46,7 +84,7 @@ export async function removeAllowedLink(serverId: string, domain: string): Promi
     );
 
   if (error) {
-    console.error('Failed to remove allowed link:', error);
+    logError('removeAllowedLink_failed', { serverId, domain, error });
     throw error;
   }
 }
@@ -69,7 +107,7 @@ export function isDomainAllowed(url: string, allowedDomains: string[]): boolean 
   const domain = extractDomain(url);
   if (!domain) return false;
   
-  return allowedDomains.some(allowed => {
+  return allowedDomains.some((allowed: string) => {
     const normalizedAllowed = allowed.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '');
     const normalizedDomain = domain.replace(/^www\./, '');
     

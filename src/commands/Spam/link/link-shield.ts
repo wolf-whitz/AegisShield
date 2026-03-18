@@ -8,11 +8,13 @@ import {
   type VoiceChannel,
   type StageChannel,
   type ForumChannel,
-  type MediaChannel
+  type MediaChannel,
+  type Message
 } from 'discord.js';
 import type { Command } from '@types';
 import { describeCommand } from '@bot/describer/command-describer';
-import { getAllowedLinks, isDomainAllowed } from '@bot/database';
+import { getAllowedLinks, isDomainAllowed, isScamLink } from '@bot/database';
+import { logError } from '@utils';
 
 const description = describeCommand(
   'linkshield',
@@ -33,6 +35,8 @@ function isPermissionOverwritableChannel(channel: any): channel is PermissionOve
 const URL_REGEX = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/gi;
 const DISCORD_INVITE_REGEX = /(discord\.gg\/[a-zA-Z0-9-]+)|(discord\.com\/invite\/[a-zA-Z0-9-]+)/gi;
 
+const activeShields = new Map<string, boolean>();
+
 export const linkshieldCommand: Command = {
   description,
   data: new SlashCommandBuilder()
@@ -49,6 +53,12 @@ export const linkshieldCommand: Command = {
       option
         .setName('notify_user')
         .setDescription('Send warning DM to users who post blocked links (default: false)')
+        .setRequired(false)
+    )
+    .addBooleanOption(option =>
+      option
+        .setName('mute_scammers')
+        .setDescription('Mute users who post known scam links (default: true)')
         .setRequired(false)
     ),
   async execute(interaction) {
@@ -71,7 +81,18 @@ export const linkshieldCommand: Command = {
 
     const deleteMessages = interaction.options.getBoolean('delete_messages') ?? true;
     const notifyUser = interaction.options.getBoolean('notify_user') ?? false;
+    const muteScammers = interaction.options.getBoolean('mute_scammers') ?? true;
     const allowedLinks = await getAllowedLinks(interaction.guildId!);
+
+    const shieldKey = `${interaction.guildId}-${channel.id}`;
+    
+    if (activeShields.has(shieldKey)) {
+      await interaction.reply({
+        content: '⚠️ Link Shield is already active in this channel.',
+        flags: MessageFlags.Ephemeral
+      });
+      return;
+    }
 
     try {
       await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, {
@@ -85,11 +106,14 @@ export const linkshieldCommand: Command = {
       if (notifyUser) {
         configText += `\n📩 **User DM:** Offenders will be notified`;
       }
+      if (muteScammers) {
+        configText += `\n🔇 **Scam Protection:** Users posting scam links will be muted`;
+      }
 
       let allowedListText = '';
       if (allowedLinks.length > 0) {
         allowedListText = `\n\n✅ **Allowed Domains:**\n` +
-          allowedLinks.map(link => `• \`${link}\``).join('\n');
+          allowedLinks.map((link: string) => `• \`${link}\``).join('\n');
       } else {
         allowedListText = `\n\n⚠️ **No allowed domains set.** Use \`/allow-link\` to whitelist domains.`;
       }
@@ -102,11 +126,16 @@ export const linkshieldCommand: Command = {
       });
 
       if (deleteMessages) {
-        const client = interaction.client;
+        activeShields.set(shieldKey, true);
         
-        const messageHandler = async (message: any) => {
+        const client = interaction.client;
+        const guildId = interaction.guildId!;
+        const channelId = channel.id;
+        
+        const messageHandler = async (message: Message) => {
           if (message.author.bot) return;
-          if (message.channel.id !== channel.id) return;
+          if (message.channel.id !== channelId) return;
+          if (!message.guild) return;
 
           const content = message.content;
           const urls = content.match(URL_REGEX) || [];
@@ -115,21 +144,34 @@ export const linkshieldCommand: Command = {
 
           if (allLinks.length === 0) return;
 
-          const currentAllowed = await getAllowedLinks(message.guild!.id);
-          const hasBlockedLink = allLinks.some(link => !isDomainAllowed(link, currentAllowed));
+          const currentAllowed = await getAllowedLinks(guildId);
+          const hasBlockedLink = allLinks.some((link: string) => !isDomainAllowed(link, currentAllowed));
+          const hasScamLink = await Promise.all(allLinks.map((link: string) => isScamLink(link))).then(results => results.some(Boolean));
 
-          if (hasBlockedLink) {
+          if (hasBlockedLink || hasScamLink) {
             try {
               await message.delete();
               
+              if (hasScamLink && muteScammers) {
+                const member = message.guild.members.cache.get(message.author.id);
+                if (member) {
+                  const muteRole = message.guild.roles.cache.find((r: { name: string }) => r.name.toLowerCase() === 'muted');
+                  if (muteRole) {
+                    await member.roles.add(muteRole, 'Posted scam link');
+                  } else {
+                    await member.timeout(3600000, 'Posted scam link');
+                  }
+                }
+              }
+              
               if (notifyUser) {
                 await message.author.send({
-                  content: `⚠️ Your message in **${message.guild!.name}** was deleted because it contained a blocked link.\n\n` +
+                  content: `⚠️ Your message in **${message.guild.name}** was deleted because it contained a blocked link.${hasScamLink ? '\n\n🔇 You have been muted for posting a scam link.' : ''}\n\n` +
                            `Allowed domains: ${currentAllowed.length > 0 ? currentAllowed.join(', ') : 'None configured'}`
                 }).catch(() => null);
               }
             } catch (error) {
-              console.error('Failed to delete link message:', error);
+              logError('linkshield_messageDeleteFailed', { messageId: message.id, error });
             }
           }
         };
@@ -137,7 +179,7 @@ export const linkshieldCommand: Command = {
         client.on('messageCreate', messageHandler);
       }
     } catch (error) {
-      console.error('Failed to activate link shield:', error);
+      logError('linkshield_activateFailed', { guildId: interaction.guildId, channelId: channel.id, error });
       await interaction.reply({
         content: '❌ Failed to activate link shield. Check bot permissions.',
         flags: MessageFlags.Ephemeral
